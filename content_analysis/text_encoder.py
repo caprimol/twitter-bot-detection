@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer #bert
 
 class TextEncoder:
     def __init__(self, max_features: int = 50):

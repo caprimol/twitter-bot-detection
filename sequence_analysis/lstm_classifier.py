@@ -9,7 +9,7 @@ class LSTMModel:
         self.model.add(Dropout(0.2))
         self.model.add(Dense(32, activation='relu'))
         self.model.add(Dense(1, activation='sigmoid'))
-        
+        self.training_history = []
         self.model.compile(
             optimizer='adam',
             loss='binary_crossentropy',
@@ -18,7 +18,7 @@ class LSTMModel:
 
     def train(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int = 5, batch_size: int = 32):
         print("Starting LSTM training...")
-        self.model.fit(
+        training_history = self.model.fit(
             X_train, 
             y_train, 
             epochs=epochs, 

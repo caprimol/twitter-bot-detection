@@ -4,6 +4,8 @@ from content_analysis.text_encoder import TextEncoder
 from data_processing.sequence_builder import SequenceBuilder
 from sequence_analysis.lstm_classifier import LSTMModel
 from sklearn.model_selection import train_test_split
+from matplotlib import pyplot as plt
+import numpy as np
 
 def main():
     base_directory = "datasets_full.csv"
@@ -34,10 +36,13 @@ def main():
         lstm = LSTMModel(sequence_length=100, num_features=51)
         
         print("\nTraining model...")
-        lstm.train(X_train, y_train, epochs=3, batch_size=64)
+        lstm.train(X_train, y_train, epochs=10, batch_size=64)
         
         print("\nFinal evaluation...")
         lstm.evaluate(X_test, y_test)
-
+        plt.plot(np.array(lstm.training_history.history['accuracy'], label='training_acuracy'))
+        plt.plot(np.array(lstm.training_history.history['val_accuracy']), label='validation accuracy')
+        plt.legend()
+        plt.savefig("fil.png")
 if __name__ == "__main__":
     main()
