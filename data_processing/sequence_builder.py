@@ -35,7 +35,7 @@ class SequenceBuilder:
             labels.append(user_label)
             
         print("Converting sequences to numpy arrays...")
-        X = np.array(sequences)
+        X = np.array(sequences, dtype=np.float32)
         y = np.array(labels)
         
         return X, y

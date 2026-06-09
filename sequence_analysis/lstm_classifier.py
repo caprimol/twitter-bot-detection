@@ -96,3 +96,48 @@ class LSTMFunctionalModel:
         loss, accuracy = self.model.evaluate(X_test, y_test)
         print(f"Test Accuracy: {accuracy:.4f}")
         return accuracy
+
+class LSTMFunctionalWithEmbeddingModel:
+    def __init__(self, sequence_length: int, num_features: int, embedding_dim: int = 40):
+        inputs = Input(shape=(sequence_length, num_features), name="Wejscie_Danych")
+        
+        # --- ZREALIZOWANY PUNKT 3: EMBEDDING 40 ---
+        # Warstwa Dense działa tutaj jako projekcja cech (Feature Embedding), 
+        # kompresując szerokie wektory (np. z BERTa) przed podaniem do LSTM.
+        x = Dense(embedding_dim, activation='relu', name=f"Embedding_Cech_{embedding_dim}")(inputs)
+        
+        x = LSTM(64, name="Warstwa_LSTM")(x)
+        x = Dropout(0.2, name="Warstwa_Dropout")(x)
+        x = Dense(32, activation='relu', name="Warstwa_Ukryta_Dense")(x)
+        outputs = Dense(1, activation='sigmoid', name="Wyjscie_Klasyfikacji")(x)
+        
+        self.model = Model(inputs=inputs, outputs=outputs, name="Model_Z_Embeddingiem")
+        
+        self.training_history = None
+        self.model.compile(
+            optimizer='adam',
+            loss='binary_crossentropy',
+            metrics=['accuracy']
+        )
+
+    # Skopiowane metody z poprzedniej klasy
+    def train(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int = 50, batch_size: int = 32):
+        print(f"\nArchitektura modelu z Embeddingiem:")
+        self.model.summary() 
+        
+        print("\nStarting LSTM (with Embedding) training...")
+        early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+
+        self.training_history = self.model.fit(
+            X_train, y_train, 
+            epochs=epochs, 
+            batch_size=batch_size, 
+            validation_split=0.2,
+            callbacks=[early_stop] 
+        )
+
+    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray):
+        print("Evaluating model...")
+        loss, accuracy = self.model.evaluate(X_test, y_test)
+        print(f"Test Accuracy: {accuracy:.4f}")
+        return accuracy
