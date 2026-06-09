@@ -1,107 +1,140 @@
+import os
+import gc
+import datetime
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+
 from data_processing.data_loader import TwitterDatasetLoader
 from data_processing.preprocessing import DataPreprocessor
-from content_analysis.text_encoder import TextEncoder
 from content_analysis.bert_encoder import BertEncoder
 from data_processing.sequence_builder import SequenceBuilder
-from sequence_analysis.lstm_classifier import LSTMModel, LSTMFunctionalModel, LSTMFunctionalWithEmbeddingModel
+from sequence_analysis.lstm_classifier import LSTMFunctionalWithEmbeddingModel, LSTMDoubleFunctionalWithEmbeddingModel
+
 from sklearn.model_selection import train_test_split
-from matplotlib import pyplot as plt
-import numpy as np
-import pandas as pd
-import datetime
-import os
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
+
+def run_baseline(encoded_tweets):
+    print("\n" + "="*50)
+    print("EKSPERYMENT: Rozwiązanie Bazowe (Naiwny Bayes)")
+    print("="*50)
+    sb = SequenceBuilder(sequence_length=100, feature_mode='both')
+    X, y = sb.build_sequences(encoded_tweets)
+    
+    liczba_probek, czas, cechy = X.shape
+    X_flat = X.reshape((liczba_probek, czas * cechy))
+    X_train, X_test, y_train, y_test = train_test_split(X_flat, y, test_size=0.2, random_state=42)
+    
+    model = GaussianNB()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    
+    print(f"Skuteczność (Baseline Bayes): {acc:.4f}")
+    
+    # Agresywne zwalnianie RAM-u po zakończeniu
+    del sb, X, y, X_flat, X_train, X_test, y_train, y_test, model
+    gc.collect()
+    return acc
+
+def run_dl_experiment(encoded_tweets, exp_name, feature_mode, model_class):
+    print("\n" + "="*50)
+    print(f"EKSPERYMENT: {exp_name}")
+    print("="*50)
+    
+    sb = SequenceBuilder(sequence_length=100, feature_mode=feature_mode)
+    X, y = sb.build_sequences(encoded_tweets)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    feature_dim = X_train.shape[2]
+    
+    model = model_class(sequence_length=100, num_features=feature_dim, embedding_dim=40)
+    
+    # Trenujemy krócej, z batch size 64
+    model.train(X_train, y_train, epochs=25, batch_size=64)
+    acc = model.evaluate(X_test, y_test)
+    
+    # Rysowanie wykresu
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(model.training_history.history['accuracy'], label='Trening')
+    plt.plot(model.training_history.history['val_accuracy'], label='Walidacja')
+    plt.title(f'Skuteczność - {exp_name}')
+    plt.xlabel('Epoka')
+    plt.ylabel('Skuteczność')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(model.training_history.history['loss'], label='Trening')
+    plt.plot(model.training_history.history['val_loss'], label='Walidacja')
+    plt.title(f'Strata - {exp_name}')
+    plt.xlabel('Epoka')
+    plt.ylabel('Strata')
+    plt.legend()
+    plt.tight_layout()
+    
+    os.makedirs('charts', exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    safe_name = exp_name.replace(" ", "_").replace("(", "").replace(")", "").replace("+", "plus")
+    filepath = os.path.join('charts', f"wykres_{safe_name}_{timestamp}.png")
+    plt.savefig(filepath)
+    plt.close() # Zwolnienie wykresu z pamięci
+    
+    print(f"Wykres zapisany w: {filepath}")
+    
+    # Czyszczenie pamięci
+    del sb, X, y, X_train, X_test, y_train, y_test, model
+    gc.collect()
+    return acc
+
 
 def main():
     base_directory = "datasets_full.csv"
-    
-    print("Initializing data loader...")
+    print("Wczytywanie i preprocessowanie danych...")
     loader = TwitterDatasetLoader(base_path=base_directory)
     users_dataframe, tweets_dataframe = loader.load_data()
     
-    if not tweets_dataframe.empty:
-        print("\nInitializing preprocessor...")
-        preprocessor = DataPreprocessor(sequence_length=100)
-        processed_tweets = preprocessor.preprocess_tweets(tweets_dataframe)
+    if tweets_dataframe.empty:
+        print("Brak danych!")
+        return
         
-        print("\nInitializing text encoder...")
-        # encoder = TextEncoder(max_features=50)
-        encoder = BertEncoder() 
-        checkpoint_file = "bert_encoded_tweets.pkl"
+    preprocessor = DataPreprocessor(sequence_length=100)
+    processed_tweets = preprocessor.preprocess_tweets(tweets_dataframe)
+    
+    checkpoint_file = "bert_encoded_tweets.pkl"
+    if os.path.exists(checkpoint_file):
+        print(f"Wczytuję gotowy BERT z pliku {checkpoint_file}...")
+        encoded_tweets = pd.read_pickle(checkpoint_file)
+    else:
+        print("Brak pliku checkpoint. Generuję wektory BERT...")
+        encoder = BertEncoder()
+        encoded_tweets = encoder.encode_tweets(processed_tweets)
+        encoded_tweets.to_pickle(checkpoint_file)
+        
+    # --- KOLEJKA EKSPERYMENTÓW (ABLATION STUDIES) ---
+    wyniki = {}
+    
+    wyniki['Naiwny Bayes (Baseline)'] = run_baseline(encoded_tweets)
+    
+    wyniki['Tylko Tekst (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Tylko Tekst", 'text_only', LSTMFunctionalWithEmbeddingModel)
+        
+    wyniki['Tylko Czas (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Tylko Czas", 'time_only', LSTMFunctionalWithEmbeddingModel)
+        
+    wyniki['Pełne Cechy (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Pelne Cechy 1xLSTM", 'both', LSTMFunctionalWithEmbeddingModel)
+        
+    wyniki['Pełne Cechy (2xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Pelne Cechy 2xLSTM", 'both', LSTMDoubleFunctionalWithEmbeddingModel)
 
-        if os.path.exists(checkpoint_file):
-            print(f"Znaleziono zapisane wektory BERT w {checkpoint_file}! Wczytuję z dysku, omijamy długie liczenie...")
-            encoded_tweets = pd.read_pickle(checkpoint_file)
-        else:
-            print("Brak zapisanego checkpointu. Rozpoczynam kodowanie BERT (to potrwa)...")
-            encoded_tweets = encoder.encode_tweets(processed_tweets)
-            print("Zapisywanie wygenerowanych wektorów BERT na dysk...")
-            encoded_tweets.to_pickle(checkpoint_file)
-            print("Zapisano pomyślnie. W razie awarii pamięci RAM, następnym razem wczytamy ten plik!")
-        # -----------------------------------
+    # --- PODSUMOWANIE ---
+    print("\n\n" + "#"*50)
+    print("PODSUMOWANIE WYNIKÓW (ABLATION STUDIES)")
+    print("#"*50)
+    for nazwa, acc in wyniki.items():
+        print(f"{nazwa.ljust(30)}: {acc*100:.2f}%")
         
-        print("\nInitializing sequence builder...")
-
-        sequence_builder = SequenceBuilder(sequence_length=100)
-        X, y = sequence_builder.build_sequences(encoded_tweets)
-        
-        print("\nSplitting data into train and test sets...")
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
-
-        feature_dim = X_train.shape[2]
-        
-        print(f"\nInitializing Model (Features per tweet: {feature_dim})...")
-        # print("\nInitializing LSTM model...")
-        #lstm = LSTMModel(sequence_length=100, num_features=51)
-        # lstm = LSTMFunctionalModel(sequence_length=100, num_features=51)
-        lstm = LSTMFunctionalWithEmbeddingModel(sequence_length=100, num_features=feature_dim, embedding_dim=40)
-        
-        print("\nTraining model...")
-        # Zmieniamy liczbę epok na 50 (Early Stopping przerwie szybciej jeśli trzeba)
-        lstm.train(X_train, y_train, epochs=50, batch_size=64) 
-        
-        print("\nFinal evaluation...")
-        lstm.evaluate(X_test, y_test)
-        
-        # --- NOWY KOD GENERUJĄCY WYKRESY I TIMESTAMP ---
-        print("\nGenerowanie wykresów...")
-        plt.figure(figsize=(12, 5)) # Większe okno na 2 wykresy
-
-        # Wykres 1: Skuteczność (Accuracy)
-        plt.subplot(1, 2, 1)
-        plt.plot(lstm.training_history.history['accuracy'], label='Trening')
-        plt.plot(lstm.training_history.history['val_accuracy'], label='Walidacja')
-        plt.title('Skuteczność modelu (Accuracy)')
-        plt.xlabel('Epoka')
-        plt.ylabel('Skuteczność')
-        plt.legend()
-
-        # Wykres 2: Funkcja straty (Loss)
-        plt.subplot(1, 2, 2)
-        plt.plot(lstm.training_history.history['loss'], label='Trening')
-        plt.plot(lstm.training_history.history['val_loss'], label='Walidacja')
-        plt.title('Funkcja straty (Loss)')
-        plt.xlabel('Epoka')
-        plt.ylabel('Strata')
-        plt.legend()
-
-        plt.tight_layout()
-        
-        # --- ZMIANY DLA FOLDERU CHARTS ---
-        # Upewniamy się, że folder 'charts' istnieje (jeśli nie, Python go stworzy)
-        os.makedirs('charts', exist_ok=True)
-        
-        # Generujemy nazwę pliku z datą i godziną
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"wykres_treningu_{timestamp}.png"
-        
-        # Łączymy folder 'charts' z nazwą pliku
-        filepath = os.path.join('charts', filename)
-        
-        # Zapisujemy pod nową ścieżką
-        plt.savefig(filepath)
-        print(f"Wykresy zapisane pomyślnie jako: {filepath}\n")
-
 if __name__ == "__main__":
     main()

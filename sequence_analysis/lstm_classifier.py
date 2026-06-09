@@ -141,3 +141,35 @@ class LSTMFunctionalWithEmbeddingModel:
         loss, accuracy = self.model.evaluate(X_test, y_test)
         print(f"Test Accuracy: {accuracy:.4f}")
         return accuracy
+
+class LSTMDoubleFunctionalWithEmbeddingModel:
+    def __init__(self, sequence_length: int, num_features: int, embedding_dim: int = 40):
+        inputs = Input(shape=(sequence_length, num_features), name="Wejscie_Danych")
+        
+        x = Dense(embedding_dim, activation='relu', name=f"Embedding_Cech_{embedding_dim}")(inputs)
+        
+        # Pierwsza warstwa LSTM MUSI mieć return_sequences=True, żeby przekazać sekwencje dalej
+        x = LSTM(64, return_sequences=True, name="Warstwa_LSTM_1")(x)
+        x = LSTM(32, name="Warstwa_LSTM_2")(x)
+        
+        x = Dropout(0.2, name="Warstwa_Dropout")(x)
+        x = Dense(32, activation='relu', name="Warstwa_Ukryta_Dense")(x)
+        outputs = Dense(1, activation='sigmoid', name="Wyjscie_Klasyfikacji")(x)
+        
+        self.model = Model(inputs=inputs, outputs=outputs, name="Model_Podwojny_LSTM")
+        self.training_history = None
+        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    def train(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int = 50, batch_size: int = 32):
+        print(f"\nArchitektura modelu 2xLSTM:")
+        self.model.summary() 
+        early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+        self.training_history = self.model.fit(
+            X_train, y_train, epochs=epochs, batch_size=batch_size, 
+            validation_split=0.2, callbacks=[early_stop] 
+        )
+
+    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray):
+        loss, accuracy = self.model.evaluate(X_test, y_test)
+        print(f"Test Accuracy: {accuracy:.4f}")
+        return accuracy
