@@ -40,7 +40,7 @@ def main():
         
         print("\nFinal evaluation...")
         lstm.evaluate(X_test, y_test)
-        plt.plot(np.array(lstm.training_history.history['accuracy'], label='training_acuracy'))
+        plt.plot(np.array(lstm.training_history.history['accuracy']), label='training_accuracy')
         plt.plot(np.array(lstm.training_history.history['val_accuracy']), label='validation accuracy')
         plt.legend()
         plt.savefig("fil.png")

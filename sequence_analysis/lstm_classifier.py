@@ -18,7 +18,7 @@ class LSTMModel:
 
     def train(self, X_train: np.ndarray, y_train: np.ndarray, epochs: int = 5, batch_size: int = 32):
         print("Starting LSTM training...")
-        training_history = self.model.fit(
+        self.training_history = self.model.fit(
             X_train, 
             y_train, 
             epochs=epochs, 
