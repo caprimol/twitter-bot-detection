@@ -2,7 +2,7 @@ from data_processing.data_loader import TwitterDatasetLoader
 from data_processing.preprocessing import DataPreprocessor
 from content_analysis.text_encoder import TextEncoder
 from data_processing.sequence_builder import SequenceBuilder
-from sequence_analysis.lstm_classifier import LSTMModel
+from sequence_analysis.lstm_classifier import LSTMModel, LSTMFunctionalModel
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 import numpy as np
@@ -35,8 +35,9 @@ def main():
         )
         
         print("\nInitializing LSTM model...")
-        lstm = LSTMModel(sequence_length=100, num_features=51)
-        
+        #lstm = LSTMModel(sequence_length=100, num_features=51)
+        lstm = LSTMFunctionalModel(sequence_length=100, num_features=51)
+
         print("\nTraining model...")
         # Zmieniamy liczbę epok na 50 (Early Stopping przerwie szybciej jeśli trzeba)
         lstm.train(X_train, y_train, epochs=50, batch_size=64) 
