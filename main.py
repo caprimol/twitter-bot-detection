@@ -6,6 +6,8 @@ from sequence_analysis.lstm_classifier import LSTMModel
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 import numpy as np
+import datetime
+import os
 
 def main():
     base_directory = "datasets_full.csv"
@@ -36,13 +38,50 @@ def main():
         lstm = LSTMModel(sequence_length=100, num_features=51)
         
         print("\nTraining model...")
-        lstm.train(X_train, y_train, epochs=10, batch_size=64)
+        # Zmieniamy liczbę epok na 50 (Early Stopping przerwie szybciej jeśli trzeba)
+        lstm.train(X_train, y_train, epochs=50, batch_size=64) 
         
         print("\nFinal evaluation...")
         lstm.evaluate(X_test, y_test)
-        plt.plot(np.array(lstm.training_history.history['accuracy']), label='training_accuracy')
-        plt.plot(np.array(lstm.training_history.history['val_accuracy']), label='validation accuracy')
+        
+        # --- NOWY KOD GENERUJĄCY WYKRESY I TIMESTAMP ---
+        print("\nGenerowanie wykresów...")
+        plt.figure(figsize=(12, 5)) # Większe okno na 2 wykresy
+
+        # Wykres 1: Skuteczność (Accuracy)
+        plt.subplot(1, 2, 1)
+        plt.plot(lstm.training_history.history['accuracy'], label='Trening')
+        plt.plot(lstm.training_history.history['val_accuracy'], label='Walidacja')
+        plt.title('Skuteczność modelu (Accuracy)')
+        plt.xlabel('Epoka')
+        plt.ylabel('Skuteczność')
         plt.legend()
-        plt.savefig("fil.png")
+
+        # Wykres 2: Funkcja straty (Loss)
+        plt.subplot(1, 2, 2)
+        plt.plot(lstm.training_history.history['loss'], label='Trening')
+        plt.plot(lstm.training_history.history['val_loss'], label='Walidacja')
+        plt.title('Funkcja straty (Loss)')
+        plt.xlabel('Epoka')
+        plt.ylabel('Strata')
+        plt.legend()
+
+        plt.tight_layout()
+        
+        # --- ZMIANY DLA FOLDERU CHARTS ---
+        # Upewniamy się, że folder 'charts' istnieje (jeśli nie, Python go stworzy)
+        os.makedirs('charts', exist_ok=True)
+        
+        # Generujemy nazwę pliku z datą i godziną
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"wykres_treningu_{timestamp}.png"
+        
+        # Łączymy folder 'charts' z nazwą pliku
+        filepath = os.path.join('charts', filename)
+        
+        # Zapisujemy pod nową ścieżką
+        plt.savefig(filepath)
+        print(f"Wykresy zapisane pomyślnie jako: {filepath}\n")
+
 if __name__ == "__main__":
     main()

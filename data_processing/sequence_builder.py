@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 class SequenceBuilder:
     def __init__(self, sequence_length: int = 100):
@@ -21,7 +22,7 @@ class SequenceBuilder:
         
         feature_dim = len(tweets_dataframe.iloc[0]['combined_vector'])
         
-        for user_id, group in grouped:
+        for user_id, group in tqdm(grouped, desc="Budowanie sekwencji użytkowników"):
             user_sequence = group['combined_vector'].tolist()
             user_label = group['label'].iloc[0]
             

@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from abc import ABC, abstractmethod
+from tqdm import tqdm
 
 class DataLoader(ABC):
     @abstractmethod
@@ -25,7 +26,7 @@ class TwitterDatasetLoader(DataLoader):
         all_users = []
         all_tweets = []
         
-        for folder in self.bot_folders + self.real_folders:
+        for folder in tqdm(self.bot_folders + self.real_folders, desc="Wczytywanie folderów"):
             folder_path = os.path.join(self.base_path, folder)
             users_file = os.path.join(folder_path, "users.csv")
             tweets_file = os.path.join(folder_path, "tweets.csv")
