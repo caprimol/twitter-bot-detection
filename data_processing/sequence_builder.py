@@ -36,10 +36,11 @@ class SequenceBuilder:
                 return row['text_vector']
             elif self.feature_mode == 'time_only':
                 return [row['timestamp_normalized']]
+            elif self.feature_mode == 'dna_only':
+                return get_dna_features(row)  # <--- TUTAJ PRAWDOPODOBNIE BRAKOWAŁO SŁOWA 'return'
             elif self.feature_mode == 'both':
                 return [row['timestamp_normalized']] + row['text_vector']
             elif self.feature_mode == 'both_with_dna':
-                # NOWY TRYB: Czas + 3 bity Digital DNA + BERT
                 dna_vector = get_dna_features(row)
                 return [row['timestamp_normalized']] + dna_vector + row['text_vector']
             

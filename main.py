@@ -117,27 +117,32 @@ def main():
     
     wyniki['Naiwny Bayes (Baseline)'] = run_baseline(encoded_tweets)
     
+    # Eksperymenty z POJEDYNCZYMI cechami
     wyniki['Tylko Tekst (1xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Tylko Tekst", 'text_only', LSTMFunctionalWithEmbeddingModel)
         
     wyniki['Tylko Czas (1xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Tylko Czas", 'time_only', LSTMFunctionalWithEmbeddingModel)
-        
-    wyniki['Pełne Cechy (1xLSTM)'] = run_dl_experiment(
-        encoded_tweets, "Pelne Cechy 1xLSTM", 'both', LSTMFunctionalWithEmbeddingModel)
-        
-    wyniki['Pełne Cechy (2xLSTM)'] = run_dl_experiment(
-        encoded_tweets, "Pelne Cechy 2xLSTM", 'both', LSTMDoubleFunctionalWithEmbeddingModel)
 
-    wyniki['Pełne Cechy + DNA (1xLSTM)'] = run_dl_experiment(
-        encoded_tweets, "Pełne Cechy z DNA", 'both_with_dna', LSTMFunctionalWithEmbeddingModel)
+    wyniki['Tylko DNA [ACT] (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Tylko DNA", 'dna_only', LSTMFunctionalWithEmbeddingModel)
+        
+    # Eksperymenty ŁĄCZONE
+    wyniki['Czas + Tekst (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Czas i Tekst 1xLSTM", 'both', LSTMFunctionalWithEmbeddingModel)
+
+    wyniki['Czas + Tekst + DNA (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Pelne Cechy z DNA 1xLSTM", 'both_with_dna', LSTMFunctionalWithEmbeddingModel)
+        
+    wyniki['Czas + Tekst + DNA (2xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Pelne Cechy z DNA 2xLSTM", 'both_with_dna', LSTMDoubleFunctionalWithEmbeddingModel)
 
     # --- PODSUMOWANIE ---
-    print("\n\n" + "#"*50)
+    print("\n\n" + "#"*60)
     print("PODSUMOWANIE WYNIKÓW (ABLATION STUDIES)")
-    print("#"*50)
+    print("#"*60)
     for nazwa, acc in wyniki.items():
-        print(f"{nazwa.ljust(30)}: {acc*100:.2f}%")
+        print(f"{nazwa.ljust(35)}: {acc*100:.2f}%")
         
 if __name__ == "__main__":
     main()
