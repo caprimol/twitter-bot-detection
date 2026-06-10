@@ -129,6 +129,9 @@ def main():
     wyniki['Pełne Cechy (2xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Pelne Cechy 2xLSTM", 'both', LSTMDoubleFunctionalWithEmbeddingModel)
 
+    wyniki['Pełne Cechy + DNA (1xLSTM)'] = run_dl_experiment(
+        encoded_tweets, "Pełne Cechy z DNA", 'both_with_dna', LSTMFunctionalWithEmbeddingModel)
+
     # --- PODSUMOWANIE ---
     print("\n\n" + "#"*50)
     print("PODSUMOWANIE WYNIKÓW (ABLATION STUDIES)")

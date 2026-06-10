@@ -20,8 +20,12 @@ class TwitterDatasetLoader(DataLoader):
         ]
         self.real_folders = ["genuine_accounts.csv"]
         self.users_cols = ['id', 'followers_count', 'friends_count', 'statuses_count', 'favourites_count', 'listed_count']
-        self.tweets_cols = ['user_id', 'text', 'timestamp', 'retweet_count', 'favorite_count', 'num_hashtags', 'num_urls']
-
+        self.tweets_cols = [
+            'user_id', 'text', 'timestamp', 'retweet_count', 
+            'favorite_count', 'num_hashtags', 'num_urls',
+            'in_reply_to_status_id', 'retweeted_status_id' # <-- Dodane 2 kolumny
+        ]
+        
     def load_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         all_users = []
         all_tweets = []
