@@ -23,7 +23,7 @@ class TwitterDatasetLoader(DataLoader):
         self.tweets_cols = [
             'user_id', 'text', 'timestamp', 'retweet_count', 
             'favorite_count', 'num_hashtags', 'num_urls',
-            'in_reply_to_status_id', 'retweeted_status_id' # <-- Dodane 2 kolumny
+            'in_reply_to_status_id', 'retweeted_status_id'
         ]
         
     def load_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:

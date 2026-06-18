@@ -33,7 +33,6 @@ def run_baseline(encoded_tweets):
     
     print(f"Skuteczność (Baseline Bayes): {acc:.4f}")
     
-    # Agresywne zwalnianie RAM-u po zakończeniu
     del sb, X, y, X_flat, X_train, X_test, y_train, y_test, model
     gc.collect()
     return acc
@@ -51,11 +50,9 @@ def run_dl_experiment(encoded_tweets, exp_name, feature_mode, model_class):
     
     model = model_class(sequence_length=100, num_features=feature_dim, embedding_dim=40)
     
-    # Trenujemy krócej, z batch size 64
     model.train(X_train, y_train, epochs=25, batch_size=64)
     acc = model.evaluate(X_test, y_test)
     
-    # Rysowanie wykresu
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
     plt.plot(model.training_history.history['accuracy'], label='Trening')
@@ -79,11 +76,10 @@ def run_dl_experiment(encoded_tweets, exp_name, feature_mode, model_class):
     safe_name = exp_name.replace(" ", "_").replace("(", "").replace(")", "").replace("+", "plus")
     filepath = os.path.join('charts', f"wykres_{safe_name}_{timestamp}.png")
     plt.savefig(filepath)
-    plt.close() # Zwolnienie wykresu z pamięci
+    plt.close()
     
     print(f"Wykres zapisany w: {filepath}")
     
-    # Czyszczenie pamięci
     del sb, X, y, X_train, X_test, y_train, y_test, model
     gc.collect()
     return acc
@@ -112,12 +108,10 @@ def main():
         encoded_tweets = encoder.encode_tweets(processed_tweets)
         encoded_tweets.to_pickle(checkpoint_file)
         
-    # --- KOLEJKA EKSPERYMENTÓW (ABLATION STUDIES) ---
     wyniki = {}
     
     wyniki['Naiwny Bayes (Baseline)'] = run_baseline(encoded_tweets)
     
-    # Eksperymenty z POJEDYNCZYMI cechami
     wyniki['Tylko Tekst (1xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Tylko Tekst", 'text_only', LSTMFunctionalWithEmbeddingModel)
         
@@ -127,7 +121,6 @@ def main():
     wyniki['Tylko DNA [ACT] (1xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Tylko DNA", 'dna_only', LSTMFunctionalWithEmbeddingModel)
         
-    # Eksperymenty ŁĄCZONE
     wyniki['Czas + Tekst (1xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Czas i Tekst 1xLSTM", 'both', LSTMFunctionalWithEmbeddingModel)
 
@@ -137,7 +130,6 @@ def main():
     wyniki['Czas + Tekst + DNA (2xLSTM)'] = run_dl_experiment(
         encoded_tweets, "Pelne Cechy z DNA 2xLSTM", 'both_with_dna', LSTMDoubleFunctionalWithEmbeddingModel)
 
-    # --- PODSUMOWANIE ---
     print("\n\n" + "#"*60)
     print("PODSUMOWANIE WYNIKÓW (ABLATION STUDIES)")
     print("#"*60)

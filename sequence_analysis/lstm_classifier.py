@@ -22,7 +22,6 @@ class LSTMModel:
         print("\nArchitektura modelu (Sekwencyjny):")
         self.model.summary()
         
-        # Matematyczne wyliczanie wag dla zbalansowania klas boty/ludzie
         classes = np.unique(y_train)
         weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
         class_weight_dict = dict(zip(classes, weights))
@@ -105,7 +104,6 @@ class LSTMFunctionalWithEmbeddingModel:
     def __init__(self, sequence_length: int, num_features: int, embedding_dim: int = 40):
         inputs = Input(shape=(sequence_length, num_features), name="Wejscie_Danych")
         
-        # Feature Embedding kompresujący szerokie wektory (np. z BERTa) przed podaniem do LSTM
         x = Dense(embedding_dim, activation='relu', name=f"Embedding_Cech_{embedding_dim}")(inputs)
         x = LSTM(64, name="Warstwa_LSTM")(x)
         x = Dropout(0.2, name="Warstwa_Dropout")(x)
@@ -159,7 +157,6 @@ class LSTMDoubleFunctionalWithEmbeddingModel:
         
         x = Dense(embedding_dim, activation='relu', name=f"Embedding_Cech_{embedding_dim}")(inputs)
         
-        # Pierwsza warstwa LSTM przekazuje sekwencję dalej dzięki return_sequences=True
         x = LSTM(64, return_sequences=True, name="Warstwa_LSTM_1")(x)
         x = LSTM(32, name="Warstwa_LSTM_2")(x)
         

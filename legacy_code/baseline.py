@@ -17,7 +17,6 @@ def main():
         print("Brak danych do analizy.")
         return
 
-    # Ten sam proces przygotowania danych co zawsze
     preprocessor = DataPreprocessor(sequence_length=100)
     processed_tweets = preprocessor.preprocess_tweets(tweets_dataframe)
     
@@ -28,7 +27,6 @@ def main():
     X, y = sequence_builder.build_sequences(encoded_tweets)
     
     print("\nRozpłaszczanie danych trójwymiarowych dla klasycznego algorytmu...")
-    # Zmiana kształtu z (liczba_użytkowników, 100, 51) na (liczba_użytkowników, 5100)
     liczba_probek, czas, cechy = X.shape
     X_flat = X.reshape((liczba_probek, czas * cechy))
     

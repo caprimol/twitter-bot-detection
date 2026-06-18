@@ -3,7 +3,6 @@ from sentence_transformers import SentenceTransformer
 
 class BertEncoder:
     def __init__(self):
-        # Ładujemy lekki, szybki wariant modelu BERT
         print("Ładowanie modelu BERT do pamięci...")
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -11,8 +10,6 @@ class BertEncoder:
         print("Kodowanie tweetów za pomocą modelu BERT (to potrwa dłużej niż TF-IDF)...")
         tweets_dataframe['text'] = tweets_dataframe['text'].fillna('')
         
-        # BERT automatycznie tokenizuje i zamienia zdania na gęste wektory (wymiar 384)
-        # show_progress_bar=True generuje piękny pasek postępu!
         vectors = self.model.encode(tweets_dataframe['text'].tolist(), show_progress_bar=True)
         
         print("Dodawanie wektorów BERT do ramki danych...")

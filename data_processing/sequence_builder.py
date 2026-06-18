@@ -10,26 +10,21 @@ class SequenceBuilder:
     def build_sequences(self, tweets_dataframe: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         print(f"Budowanie sekwencji (Tryb: {self.feature_mode})...")
         
-        # --- NOWA FUNKCJA: Ekstrakcja Digital DNA ---
         def get_dna_features(row):
-            # Zabezpieczenie przed brakującymi danymi (NaN -> string)
             text = str(row.get('text', ''))
             reply_id = str(row.get('in_reply_to_status_id', '0')).strip().upper()
             retweet_id = str(row.get('retweeted_status_id', '0')).strip().upper()
             
-            # Logika T (Retweet): Zaczyna się od "RT @" lub ma przypisane ID retweeta
             is_retweet = text.startswith('RT @') or (retweet_id not in ['0', 'NULL', 'NAN', 'NONE', ''])
             
-            # Logika C (Conversation/Reply): Ma przypisane ID odpowiedzi
             is_reply = reply_id not in ['0', 'NULL', 'NAN', 'NONE', '']
             
-            # Kodowanie One-Hot [A, C, T]
             if is_retweet:
-                return [0.0, 0.0, 1.0] # T (Retweet)
+                return [0.0, 0.0, 1.0]
             elif is_reply:
-                return [0.0, 1.0, 0.0] # C (Reply)
+                return [0.0, 1.0, 0.0]
             else:
-                return [1.0, 0.0, 0.0] # A (Action / Autorski wpis)
+                return [1.0, 0.0, 0.0]
 
         def combine_features(row):
             if self.feature_mode == 'text_only':
@@ -37,7 +32,7 @@ class SequenceBuilder:
             elif self.feature_mode == 'time_only':
                 return [row['timestamp_normalized']]
             elif self.feature_mode == 'dna_only':
-                return get_dna_features(row)  # <--- TUTAJ PRAWDOPODOBNIE BRAKOWAŁO SŁOWA 'return'
+                return get_dna_features(row)
             elif self.feature_mode == 'both':
                 return [row['timestamp_normalized']] + row['text_vector']
             elif self.feature_mode == 'both_with_dna':
